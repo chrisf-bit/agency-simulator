@@ -20,6 +20,22 @@ const SERVER_URL = import.meta.env.PROD
 
 type AppState = 'landing' | 'joining' | 'playing' | 'facilitating' | 'ended';
 
+interface LeaderboardEntry {
+  rank: number;
+  teamId: string;
+  companyName: string;
+  teamNumber: number;
+  cumulativeProfit: number;
+  reputation: number;
+  clients: number;
+  clientCount: number;
+  cash: number;
+  burnout: number;
+  staff: number;
+  isBankrupt: boolean;
+  totalScore: number;
+}
+
 export default function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -32,6 +48,7 @@ export default function App() {
   const [_sessionToken, setSessionToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [testMode, setTestMode] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   
   // Facilitator state
   const [allTeams, setAllTeams] = useState<TeamState[]>([]);
@@ -98,8 +115,9 @@ export default function App() {
       }
     });
 
-    newSocket.on('gameEnded', (_leaderboard) => {
-      console.log('🏆 Game ended');
+    newSocket.on('gameEnded', (leaderboardData: LeaderboardEntry[]) => {
+      console.log('🏆 Game ended', leaderboardData);
+      setLeaderboard(leaderboardData);
       setAppState('ended');
     });
 
@@ -339,20 +357,145 @@ export default function App() {
   }
 
   if (appState === 'ended') {
+    const winner = leaderboard[0];
+    const myTeam = teamState ? leaderboard.find(t => t.teamId === teamState.teamId) : null;
+    const isWinner = myTeam && winner && myTeam.teamId === winner.teamId;
+    
     return (
-      <div className="min-h-screen flex items-center justify-center"
+      <div className="min-h-screen p-6"
            style={{ background: `linear-gradient(135deg, ${AMBER_COLORS.darkGrey} 0%, #1a1a1a 100%)` }}>
-        <div className="text-center text-white bg-white/10 rounded-xl p-8">
-          <div className="text-6xl mb-4">🏆</div>
-          <h1 className="text-2xl font-bold mb-2">Game Complete!</h1>
-          <p className="text-white/70 mb-4">Thank you for playing Agency Simulator</p>
-          <button
-            onClick={handleLeaveGame}
-            className="px-6 py-2 rounded-lg font-bold"
-            style={{ background: AMBER_GRADIENT }}
-          >
-            Play Again
-          </button>
+        <div className="max-w-4xl mx-auto">
+          
+          {/* Winner Celebration */}
+          {winner && (
+            <div className="text-center mb-8">
+              <div className="text-7xl mb-4">{isWinner ? '🎉' : '🏆'}</div>
+              <h1 className="text-4xl font-bold text-white mb-2">
+                {isWinner ? 'You Won!' : 'Game Complete!'}
+              </h1>
+              <p className="text-xl text-amber-400">
+                🏆 {winner.companyName} takes the crown!
+              </p>
+              <p className="text-white/60 mt-2">
+                Final Score: {formatCurrency(winner.totalScore)} • Profit: {formatCurrency(winner.cumulativeProfit)}
+              </p>
+            </div>
+          )}
+          
+          {/* Leaderboard */}
+          <div className="bg-white/10 rounded-xl p-6 mb-6">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              📊 Final Standings
+            </h2>
+            
+            <div className="space-y-3">
+              {leaderboard.map((team, index) => {
+                const isMyTeam = myTeam && team.teamId === myTeam.teamId;
+                const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+                
+                return (
+                  <div 
+                    key={team.teamId}
+                    className={`rounded-lg p-4 ${
+                      isMyTeam 
+                        ? 'bg-amber-500/30 border-2 border-amber-500' 
+                        : team.isBankrupt 
+                          ? 'bg-red-900/30 border border-red-500/50'
+                          : 'bg-white/5 border border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <span className="text-2xl w-10">{rankEmoji}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-white text-lg">{team.companyName}</span>
+                            {isMyTeam && <span className="text-xs bg-amber-500 text-black px-2 py-0.5 rounded">YOU</span>}
+                            {team.isBankrupt && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">BANKRUPT</span>}
+                          </div>
+                          <span className="text-white/50 text-sm">Team {team.teamNumber}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-6 text-right">
+                        <div>
+                          <div className="text-white/50 text-xs">Profit</div>
+                          <div className={`font-bold ${team.cumulativeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {formatCurrency(team.cumulativeProfit)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white/50 text-xs">Cash</div>
+                          <div className={`font-bold ${team.cash >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {formatCurrency(team.cash)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white/50 text-xs">Rep</div>
+                          <div className="font-bold text-blue-400">{team.reputation}/100</div>
+                        </div>
+                        <div>
+                          <div className="text-white/50 text-xs">Clients</div>
+                          <div className="font-bold text-purple-400">{team.clientCount}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/50 text-xs">Staff</div>
+                          <div className="font-bold text-cyan-400">{team.staff}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/50 text-xs">Score</div>
+                          <div className="font-bold text-amber-400">{formatCurrency(team.totalScore)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          
+          {/* Your Performance Summary (if you're a player) */}
+          {myTeam && (
+            <div className="bg-white/10 rounded-xl p-6 mb-6">
+              <h2 className="text-xl font-bold text-white mb-4">📈 Your Performance</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white/5 rounded-lg p-4 text-center">
+                  <div className="text-3xl mb-1">{myTeam.rank === 1 ? '🥇' : myTeam.rank === 2 ? '🥈' : myTeam.rank === 3 ? '🥉' : '🏅'}</div>
+                  <div className="text-2xl font-bold text-white">#{myTeam.rank}</div>
+                  <div className="text-white/50 text-sm">Final Rank</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4 text-center">
+                  <div className="text-3xl mb-1">💰</div>
+                  <div className={`text-2xl font-bold ${myTeam.cumulativeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {formatCurrency(myTeam.cumulativeProfit)}
+                  </div>
+                  <div className="text-white/50 text-sm">Total Profit</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4 text-center">
+                  <div className="text-3xl mb-1">⭐</div>
+                  <div className="text-2xl font-bold text-blue-400">{myTeam.reputation}/100</div>
+                  <div className="text-white/50 text-sm">Reputation</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4 text-center">
+                  <div className="text-3xl mb-1">🤝</div>
+                  <div className="text-2xl font-bold text-purple-400">{myTeam.clientCount}</div>
+                  <div className="text-white/50 text-sm">Active Clients</div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Thank You & Play Again */}
+          <div className="text-center">
+            <p className="text-white/60 mb-4">Thank you for playing Agency Simulator</p>
+            <button
+              onClick={handleLeaveGame}
+              className="px-8 py-3 rounded-lg font-bold text-lg"
+              style={{ background: AMBER_GRADIENT }}
+            >
+              Play Again
+            </button>
+          </div>
         </div>
       </div>
     );
