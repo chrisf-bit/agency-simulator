@@ -10,6 +10,7 @@ import {
   Notification,
   AMBER_COLORS,
   AMBER_GRADIENT,
+  formatCurrency,
 } from './types';
 import GameBoard from './components/GameBoard';
 import FacilitatorView from './components/FacilitatorView';
