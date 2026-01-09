@@ -14,7 +14,9 @@ import {
 import GameBoard from './components/GameBoard';
 import FacilitatorView from './components/FacilitatorView';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const SERVER_URL = import.meta.env.PROD 
+  ? 'https://agency-simulator.onrender.com'
+  : 'http://localhost:3001';
 
 type AppState = 'landing' | 'joining' | 'playing' | 'facilitating' | 'ended';
 
@@ -392,7 +394,7 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-6">
-          <div className="text-5xl mb-2">🏢</div>
+          <img src="/amber-logo.jpg" alt="The Amber Group" className="h-24 mx-auto mb-2" />
           <h1 className="text-2xl font-bold mb-1"
               style={{ color: AMBER_COLORS.darkGrey, fontFamily: 'Libre Franklin, sans-serif' }}>
             AGENCY SIMULATOR
