@@ -750,17 +750,36 @@ export function calculateWinner(teams: TeamState[]): string {
 }
 
 export function getLeaderboard(teams: TeamState[]): LeaderboardEntry[] {
-  return teams
-    .map(team => ({
-      teamId: team.teamId,
-      companyName: team.companyName,
-      teamNumber: team.teamNumber,
-      cumulativeProfit: team.cumulativeProfit,
-      reputation: team.reputation,
-      staff: team.staff,
-      isBankrupt: team.isBankrupt,
-    }))
-    .sort((a, b) => b.cumulativeProfit - a.cumulativeProfit);
+  const sorted = teams
+    .map(team => {
+      const clientCount = team.clients?.length || 0;
+      // Calculate total score (can customize weighting)
+      const totalScore = team.cumulativeProfit + (team.reputation * 1000) + (clientCount * 5000);
+      
+      return {
+        teamId: team.teamId,
+        companyName: team.companyName,
+        teamNumber: team.teamNumber,
+        cumulativeProfit: team.cumulativeProfit,
+        reputation: team.reputation,
+        clients: clientCount,
+        clientCount: clientCount,
+        cash: team.cash,
+        burnout: team.burnout,
+        staff: team.staff,
+        isBankrupt: team.isBankrupt,
+        totalScore,
+        rank: 0, // Will be set below
+      };
+    })
+    .sort((a, b) => b.totalScore - a.totalScore);
+  
+  // Assign ranks
+  sorted.forEach((entry, index) => {
+    entry.rank = index + 1;
+  });
+  
+  return sorted;
 }
 
 export function checkBankruptcy(team: TeamState): boolean {

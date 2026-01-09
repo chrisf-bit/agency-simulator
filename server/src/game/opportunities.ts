@@ -249,7 +249,7 @@ export function generateExistingClientProjects(
       serviceLine: client.serviceLine,
       budget: Math.max(25000, projectBudget),
       complexity: 'low', // Existing relationship makes it simpler
-      deadline: 'relaxed',
+      deadline: 'normal',
       hoursRequired: Math.max(50, hoursRequired),
       baseWinChance: Math.min(95, baseWinChance),
       quarter,
