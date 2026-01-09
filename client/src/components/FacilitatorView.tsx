@@ -359,10 +359,6 @@ function generateFacilitationPrompts(teams: TeamState[], quarter: number): Facil
     return Math.abs(hash);
   };
 
-  const pickRandom = <T,>(arr: T[], teamId: string, salt: string): T => {
-    return arr[seededRandom(teamId, salt) % arr.length];
-  };
-
   // Shuffle array based on seed
   const shuffleWithSeed = <T,>(arr: T[], teamId: string, salt: string): T[] => {
     const shuffled = [...arr];
@@ -380,7 +376,6 @@ function generateFacilitationPrompts(teams: TeamState[], quarter: number): Facil
     const lastResult = results[results.length - 1];
     const prevResult = results[results.length - 2];
     const clients = team.clients || [];
-    const totalProfit = results.reduce((sum, r) => sum + r.profit, 0);
     const inputs = team.currentInputs;
     const atRiskClients = clients.filter(c => c.satisfactionLevel < 40 || c.status === 'notice_given');
 
