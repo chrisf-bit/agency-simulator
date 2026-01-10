@@ -19,7 +19,7 @@ const SERVER_URL = import.meta.env.PROD
   ? 'https://agency-simulator.onrender.com'
   : 'http://localhost:3001';
 
-// Access code for game entry - change this to control access
+// Access code for facilitator game creation - change this to control access
 const ACCESS_CODE = 'AMBER2025';
 
 type AppState = 'landing' | 'joining' | 'playing' | 'facilitating' | 'ended';
@@ -41,10 +41,6 @@ interface LeaderboardEntry {
 }
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [accessCodeInput, setAccessCodeInput] = useState('');
-  const [accessError, setAccessError] = useState('');
-  
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [appState, setAppState] = useState<AppState>('landing');
@@ -61,72 +57,6 @@ export default function App() {
   // Facilitator state
   const [allTeams, setAllTeams] = useState<TeamState[]>([]);
   const [currentQuarter, setCurrentQuarter] = useState(1);
-  
-  // Check for stored access on mount
-  useEffect(() => {
-    const stored = sessionStorage.getItem('agency-sim-access');
-    if (stored === 'granted') {
-      setIsAuthenticated(true);
-    }
-  }, []);
-  
-  const handleAccessSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (accessCodeInput.toUpperCase() === ACCESS_CODE) {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('agency-sim-access', 'granted');
-      setAccessError('');
-    } else {
-      setAccessError('Invalid access code');
-    }
-  };
-  
-  // Access gate screen
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-6">
-            <img src="/amber-logo.jpg" alt="The Amber Group" className="h-20 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-1"
-                style={{ color: AMBER_COLORS.darkGrey, fontFamily: 'Libre Franklin, sans-serif' }}>
-              AGENCY SIMULATOR
-            </h1>
-            <p style={{ color: AMBER_COLORS.midGrey }}>Enter access code to continue</p>
-          </div>
-          
-          <form onSubmit={handleAccessSubmit} className="space-y-4">
-            <div>
-              <input
-                type="text"
-                value={accessCodeInput}
-                onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())}
-                placeholder="ACCESS CODE"
-                className="w-full px-4 py-3 text-center text-lg tracking-widest border-2 rounded-lg focus:outline-none focus:border-amber-500"
-                style={{ borderColor: accessError ? '#ef4444' : AMBER_COLORS.midGrey }}
-                autoFocus
-              />
-              {accessError && (
-                <p className="text-red-500 text-sm text-center mt-2">{accessError}</p>
-              )}
-            </div>
-            
-            <button
-              type="submit"
-              className="w-full py-3 rounded-lg font-bold text-white transition-transform hover:scale-105"
-              style={{ background: AMBER_GRADIENT }}
-            >
-              Enter
-            </button>
-          </form>
-          
-          <p className="text-center text-sm mt-6" style={{ color: AMBER_COLORS.midGrey }}>
-            Contact your facilitator for access
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Initialize socket connection
   useEffect(() => {
@@ -593,6 +523,19 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
   const [mode, setMode] = useState<'player' | 'facilitator'>('player');
   const [numberOfTeams, setNumberOfTeams] = useState(4);
   const [numberOfQuarters, setNumberOfQuarters] = useState(8);
+  
+  // Facilitator access code state
+  const [facilitatorAuthenticated, setFacilitatorAuthenticated] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [accessError, setAccessError] = useState('');
+  
+  // Check for stored facilitator access on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('agency-sim-facilitator');
+    if (stored === 'granted') {
+      setFacilitatorAuthenticated(true);
+    }
+  }, []);
 
   const handleJoinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -604,6 +547,17 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
   const handleCreateSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onCreateGame(numberOfTeams, numberOfQuarters);
+  };
+  
+  const handleAccessSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (accessCodeInput.toUpperCase() === ACCESS_CODE) {
+      setFacilitatorAuthenticated(true);
+      sessionStorage.setItem('agency-sim-facilitator', 'granted');
+      setAccessError('');
+    } else {
+      setAccessError('Invalid access code');
+    }
   };
 
   return (
@@ -707,7 +661,41 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
         )}
 
         {/* Create Game Form (Facilitator Mode) */}
-        {mode === 'facilitator' && (
+        {mode === 'facilitator' && !facilitatorAuthenticated && (
+          <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+            <form onSubmit={handleAccessSubmit} className="space-y-3">
+              <div>
+                <label className="block text-gray-600 text-sm mb-1">Facilitator Access Code</label>
+                <input
+                  type="text"
+                  value={accessCodeInput}
+                  onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())}
+                  placeholder="ACCESS CODE"
+                  className="w-full px-4 py-2.5 text-center tracking-widest rounded-lg bg-white text-gray-800 border border-gray-300 focus:border-orange-500 focus:outline-none"
+                  style={{ borderColor: accessError ? '#ef4444' : undefined }}
+                  autoFocus
+                />
+                {accessError && (
+                  <p className="text-red-500 text-sm text-center mt-2">{accessError}</p>
+                )}
+              </div>
+              
+              <button
+                type="submit"
+                className="w-full py-2.5 rounded-lg font-bold text-white transition-all"
+                style={{ background: AMBER_COLORS.orange }}
+              >
+                🔓 Unlock Facilitator Mode
+              </button>
+            </form>
+            
+            <p className="text-gray-400 text-xs text-center mt-3">
+              Contact chris@rapid-learn.co.uk for access
+            </p>
+          </div>
+        )}
+        
+        {mode === 'facilitator' && facilitatorAuthenticated && (
           <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
             <form onSubmit={handleCreateSubmit} className="space-y-3">
               <div>
