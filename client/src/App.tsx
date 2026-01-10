@@ -745,7 +745,7 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-gray-400 text-sm">
-            Powered by Amber Group
+            Powered by The Amber Group
           </p>
         </div>
       </div>
