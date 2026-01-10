@@ -644,19 +644,6 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
                 Join Game
               </button>
             </form>
-
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={onTestMode}
-                disabled={!isConnected}
-                className="w-full py-2.5 rounded-lg font-medium text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 transition-all disabled:opacity-50"
-              >
-                🧪 Quick Test Mode
-              </button>
-              <p className="text-gray-400 text-xs text-center mt-1">
-                Practice without a facilitator
-              </p>
-            </div>
           </div>
         )}
 
@@ -740,9 +727,18 @@ function LandingPage({ onJoinGame, onCreateGame, onTestMode, error, isConnected 
               </button>
             </form>
 
-            <p className="text-gray-400 text-xs text-center mt-3">
-              Creates a game code for teams to join
-            </p>
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={onTestMode}
+                disabled={!isConnected}
+                className="w-full py-2.5 rounded-lg font-medium text-gray-600 bg-white border border-gray-300 hover:bg-gray-50 transition-all disabled:opacity-50"
+              >
+                🧪 Quick Test Mode
+              </button>
+              <p className="text-gray-400 text-xs text-center mt-1">
+                Solo practice - auto-advances quarters
+              </p>
+            </div>
           </div>
         )}
 
