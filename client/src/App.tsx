@@ -19,6 +19,9 @@ const SERVER_URL = import.meta.env.PROD
   ? 'https://agency-simulator.onrender.com'
   : 'http://localhost:3001';
 
+// Access code for game entry - change this to control access
+const ACCESS_CODE = 'AMBER2025';
+
 type AppState = 'landing' | 'joining' | 'playing' | 'facilitating' | 'ended';
 
 interface LeaderboardEntry {
@@ -38,6 +41,10 @@ interface LeaderboardEntry {
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessCodeInput, setAccessCodeInput] = useState('');
+  const [accessError, setAccessError] = useState('');
+  
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [appState, setAppState] = useState<AppState>('landing');
@@ -54,6 +61,72 @@ export default function App() {
   // Facilitator state
   const [allTeams, setAllTeams] = useState<TeamState[]>([]);
   const [currentQuarter, setCurrentQuarter] = useState(1);
+  
+  // Check for stored access on mount
+  useEffect(() => {
+    const stored = sessionStorage.getItem('agency-sim-access');
+    if (stored === 'granted') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+  
+  const handleAccessSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (accessCodeInput.toUpperCase() === ACCESS_CODE) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('agency-sim-access', 'granted');
+      setAccessError('');
+    } else {
+      setAccessError('Invalid access code');
+    }
+  };
+  
+  // Access gate screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-6">
+            <img src="/amber-logo.jpg" alt="The Amber Group" className="h-20 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-1"
+                style={{ color: AMBER_COLORS.darkGrey, fontFamily: 'Libre Franklin, sans-serif' }}>
+              AGENCY SIMULATOR
+            </h1>
+            <p style={{ color: AMBER_COLORS.midGrey }}>Enter access code to continue</p>
+          </div>
+          
+          <form onSubmit={handleAccessSubmit} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                value={accessCodeInput}
+                onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())}
+                placeholder="ACCESS CODE"
+                className="w-full px-4 py-3 text-center text-lg tracking-widest border-2 rounded-lg focus:outline-none focus:border-amber-500"
+                style={{ borderColor: accessError ? '#ef4444' : AMBER_COLORS.midGrey }}
+                autoFocus
+              />
+              {accessError && (
+                <p className="text-red-500 text-sm text-center mt-2">{accessError}</p>
+              )}
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full py-3 rounded-lg font-bold text-white transition-transform hover:scale-105"
+              style={{ background: AMBER_GRADIENT }}
+            >
+              Enter
+            </button>
+          </form>
+          
+          <p className="text-center text-sm mt-6" style={{ color: AMBER_COLORS.midGrey }}>
+            Contact your facilitator for access
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Initialize socket connection
   useEffect(() => {
